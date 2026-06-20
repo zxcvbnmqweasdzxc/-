@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>卡密登录 · 客户端</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+        body {
+            background: #0b0f17;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #eef3fc;
+        }
+        .app { max-width: 420px; width: 100%; }
+        .card {
+            background: #131b26;
+            border-radius: 28px;
+            padding: 32px 24px;
+            border: 1px solid #26303e;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+        .logo { font-size: 32px; font-weight: 700; margin-bottom: 6px; background: linear-gradient(135deg, #aac3e6, #5f8fc9); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .sub { color: #7b93b5; margin-bottom: 20px; font-size: 14px; }
+        input {
+            background: #0d1622;
+            border: 1px solid #263340;
+            border-radius: 40px;
+            padding: 14px 20px;
+            color: #e3edf9;
+            font-size: 15px;
+            outline: none;
+            width: 100%;
+            transition: 0.15s;
+        }
+        input:focus { border-color: #3f85c0; box-shadow: 0 0 0 3px rgba(63,133,192,0.2); }
+        input::placeholder { color: #5b718b; }
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .input-wrapper input { flex: 1; margin-bottom: 0; }
+        .btn-paste {
+            background: #1f334a;
+            border: 1px solid #3f85c0;
+            color: #b0cbe8;
+            padding: 12px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            transition: 0.15s;
+            min-width: 70px;
+        }
+        .btn-paste:hover { background: #2a4a6a; }
+        .btn {
+            background: #1f2b3c;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 15px;
+            color: #dfe9f5;
+            cursor: pointer;
+            border: 1px solid #314257;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 100px;
+        }
+        .btn-primary { background: #2a6b9c; border-color: #3f88c7; color: white; box-shadow: 0 4px 12px rgba(42,107,156,0.3); }
+        .btn-primary:hover { background: #327bb3; }
+        .btn-danger { background: #9e3e4e; border-color: #c45568; color: white; }
+        .btn-danger:hover { background: #b84a5c; }
+        .btn-outline { background: transparent; border-color: #3d4d62; }
+        .btn-outline:hover { background: #1f2a39; }
+        .btn-success { background: #1f8b6b; border-color: #2bb08a; color: white; }
+        .btn-success:hover { background: #28a07c; }
+        .btn-block { width: 100%; justify-content: center; }
+        .flex { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .mt-3 { margin-top: 20px; }
+        .text-muted { color: #869dbd; font-size: 14px; }
+        .msg { margin-top: 16px; color: #afc6e3; font-size: 14px; min-height: 24px; }
+        .success-page { display: none; }
+        .success-page .big-icon { font-size: 64px; margin-bottom: 10px; }
+        .success-page .expire { background: #1d293b; border-radius: 60px; padding: 12px 20px; display: inline-block; border: 1px solid #3b5068; margin: 10px 0 16px; font-size: 15px; }
+        .status-bar {
+            background: #0d1824;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            color: #7fc9f0;
+            margin-bottom: 14px;
+            border: 1px solid #1f334a;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f334a;
+            color: #d4e0f0;
+            padding: 12px 24px;
+            border-radius: 40px;
+            border: 1px solid #3f85c0;
+            font-size: 14px;
+            z-index: 999;
+            animation: fadeInDown 0.3s ease;
+            display: none;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .api-tag {
+            background: #1f334a;
+            border-left: 4px solid #f0b34b;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 13px;
+            color: #d4e0f0;
+            text-align: left;
+        }
+        .api-tag code {
+            background: #0d1824;
+            padding: 2px 10px;
+            border-radius: 4px;
+            color: #f0d68a;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .api-tag strong { color: #f5c542; }
+        .api-tag .highlight { color: #7fc9f0; }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #3f85c0;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div id="toast" class="toast"></div>
+
+    <div id="loginPage" class="card">
+        <div class="logo">🔐 卡密登录</div>
+        <div class="sub">输入卡密以激活客户端</div>
+
+        <div class="status-bar" id="loginStatus">📌 请输入卡密</div>
+
+        <div class="input-wrapper">
+            <input type="text" id="clientKeyInput" placeholder="请输入卡密" autocomplete="off">
+            <button class="btn-paste" id="pasteBtn">📋 粘贴</button>
+        </div>
+
+        <div class="flex">
+            <button class="btn btn-primary" id="clientLoginBtn">登录</button>
+            <button class="btn btn-danger" id="clientUnbindBtn">解绑</button>
+        </div>
+        <div id="clientMsg" class="msg">请输入卡密</div>
+
+        <div class="api-tag">
+            <strong>🔌 对接码已配置</strong><br>
+            <span class="highlight">对接码:</span> <code id="displayMainCode">XXXXXXXX</code>
+        </div>
+    </div>
+
+    <div id="successPage" class="card success-page">
+        <div class="big-icon">✅</div>
+        <h2 style="margin-bottom: 4px;">登录成功</h2>
+        <div class="expire">⏳ 到期时间：<span id="clientExpireDisplay">2027-01-01 00:00</span></div>
+        <button class="btn btn-success btn-block" id="enterAppBtn">🚀 进入应用</button>
+        <div style="margin-top: 14px; font-size:13px; color:#7a93b5;">(后续自行扩展)</div>
+        <button class="btn btn-outline btn-sm mt-3" id="logoutBtn" style="width:100%;">退出登录</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ================================================================
+        // ★★★★★ 对接码 (随机生成，与账号无关) ★★★★★
+        // 每次运行随机生成，也可手动固定
+        // ================================================================
+        function generateRandomCode() {
+            var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var code = '';
+            for (var i = 0; i < 12; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+        // 可以固定一个对接码，也可以每次随机
+        var MAIN_CODE = '0Z7NQMSAQ7BW';
+        // 如果想固定，把上面注释掉，取消下面这行注释并填入你的码
+        // var MAIN_CODE = 'ABC123XYZ789';
+
+        document.getElementById('displayMainCode').innerText = MAIN_CODE;
+
+        console.log('✅ 对接码:', MAIN_CODE);
+
+        // ================================================================
+        // ★★★★★ Toast 提示 ★★★★★
+        // ================================================================
+        function showToast(text, duration) {
+            var toast = document.getElementById('toast');
+            toast.innerText = text;
+            toast.style.display = 'block';
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(function() {
+                toast.style.display = 'none';
+            }, duration || 2000);
+        }
+
+        // ================================================================
+        // ★★★★★ 粘贴功能 ★★★★★
+        // ================================================================
+        document.getElementById('pasteBtn').addEventListener('click', function() {
+            if (navigator.clipboard) {
+                navigator.clipboard.readText().then(function(text) {
+                    document.getElementById('clientKeyInput').value = text;
+                    showToast('✅ 已粘贴卡密');
+                }).catch(function() {
+                    var input = document.getElementById('clientKeyInput');
+                    input.focus();
+                    document.execCommand('paste');
+                    showToast('✅ 已粘贴卡密');
+                });
+            } else {
+                var input = document.getElementById('clientKeyInput');
+                input.focus();
+                document.execCommand('paste');
+                showToast('✅ 已粘贴卡密');
+            }
+        });
+
+        // ================================================================
+        // ★★★★★ 获取所有卡密数据 ★★★★★
+        // ================================================================
+        function getAllCardsFromAllAccounts() {
+            var CARDS_PREFIX = 'admin_cards_';
+            var STORAGE_KEY = 'admin_accounts_data_v2';
+            var allCards = [];
+
+            var accountsData = localStorage.getItem(STORAGE_KEY);
+            if (!accountsData) {
+                return allCards;
+            }
+
+            try {
+                var accounts = JSON.parse(accountsData);
+                var accountNames = Object.keys(accounts);
+
+                for (var i = 0; i < accountNames.length; i++) {
+                    var account = accountNames[i];
+                    var cardKey = CARDS_PREFIX + account;
+                    var data = localStorage.getItem(cardKey);
+                    if (data) {
+                        try {
+                            var cards = JSON.parse(data);
+                            for (var j = 0; j < cards.length; j++) {
+                                var card = cards[j];
+                                card._account = account;
+                                allCards.push(card);
+                            }
+                        } catch (e) {}
+                    }
+                }
+            } catch (e) {
+                console.error('解析账号数据失败:', e);
+            }
+
+            return allCards;
+        }
+
+        // ================================================================
+        // ★★★★★ 保存卡密到指定账号 ★★★★★
+        // ================================================================
+        function saveCardToAccount(account, card) {
+            var CARDS_PREFIX = 'admin_cards_';
+            var cardKey = CARDS_PREFIX + account;
+            var cards = [];
+            var data = localStorage.getItem(cardKey);
+            if (data) {
+                try {
+                    cards = JSON.parse(data);
+                } catch (e) {}
+            }
+            var idx = -1;
+            for (var i = 0; i < cards.length; i++) {
+                if (cards[i].key === card.key) {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx >= 0) {
+                cards[idx] = card;
+            } else {
+                cards.push(card);
+            }
+            localStorage.setItem(cardKey, JSON.stringify(cards));
+            return cards;
+        }
+
+        // ================================================================
+        // ★★★★★ 获取北京时间 ★★★★★
+        // ================================================================
+        function getBeijingTime() {
+            var now = new Date();
+            var beijingOffset = 8 * 60;
+            var localOffset = now.getTimezoneOffset();
+            return new Date(now.getTime() + (beijingOffset + localOffset) * 60000);
+        }
+
+        function formatBeijingTime(date) {
+            var year = date.getFullYear();
+            var month = String(date.getMonth() + 1).padStart(2, '0');
+            var day = String(date.getDate()).padStart(2, '0');
+            var hours = String(date.getHours()).padStart(2, '0');
+            var minutes = String(date.getMinutes()).padStart(2, '0');
+            var seconds = String(date.getSeconds()).padStart(2, '0');
+            return year + '-' + month + '-' + day + ' ' + hours + ':' + minutes + ':' + seconds;
+        }
+
+        // ================================================================
+        // ★★★★★ 登录校验 ★★★★★
+        // ================================================================
+        var clientLogged = false;
+        var clientExpire = '';
+        var currentAccount = '';
+        var currentDeviceId = 'DEV-' + Math.random().toString(36).substring(2,8).toUpperCase();
+
+        var loginPage = document.getElementById('loginPage');
+        var successPage = document.getElementById('successPage');
+        var keyInput = document.getElementById('clientKeyInput');
+        var msg = document.getElementById('clientMsg');
+        var statusBar = document.getElementById('loginStatus');
+        var expireDisplay = document.getElementById('clientExpireDisplay');
+
+        function handleLogin(key) {
+            var allCards = getAllCardsFromAllAccounts();
+
+            var found = null;
+            for (var i = 0; i < allCards.length; i++) {
+                if (allCards[i].key === key) {
+                    found = allCards[i];
+                    break;
+                }
+            }
+
+            if (!found) {
+                msg.innerText = '❌ 卡密不存在';
+                return false;
+            }
+
+            var account = found._account;
+            var card = found;
+
+            if (card.bound && card.device && card.device !== currentDeviceId) {
+                msg.innerText = '❌ 该卡密已绑定其他设备，无法登录';
+                return false;
+            }
+
+            if (card.expire !== '永久') {
+                var now = getBeijingTime();
+                var expireDate = new Date(card.expire);
+                if (expireDate < now) {
+                    msg.innerText = '❌ 卡密已过期，到期时间: ' + card.expire;
+                    return false;
+                }
+            }
+
+            clientLogged = true;
+            clientExpire = card.expire;
+            currentAccount = account;
+
+            if (!card.bound) {
+                card.bound = true;
+                card.device = currentDeviceId;
+                saveCardToAccount(account, card);
+            }
+
+            localStorage.setItem('client_logged_key', key);
+            localStorage.setItem('client_logged_account', account);
+
+            msg.innerText = '✅ 登录成功！';
+            return true;
+        }
+
+        // ================================================================
+        // ★★★★★ 解绑功能 ★★★★★
+        // ================================================================
+        function handleUnbind(key) {
+            var allCards = getAllCardsFromAllAccounts();
+            var found = null;
+            for (var i = 0; i < allCards.length; i++) {
+                if (allCards[i].key === key) {
+                    found = allCards[i];
+                    break;
+                }
+            }
+
+            if (!found) {
+                return '❌ 卡密不存在';
+            }
+
+            var account = found._account;
+            var card = found;
+
+            if (!card.bound) {
+                return '⚠️ 该卡密未绑定';
+            }
+
+            card.bound = false;
+            card.device = '';
+            saveCardToAccount(account, card);
+
+            if (clientLogged && clientExpire === card.expire) {
+                clientLogged = false;
+                clientExpire = '';
+                currentAccount = '';
+                localStorage.removeItem('client_logged_key');
+                localStorage.removeItem('client_logged_account');
+                loginPage.style.display = 'block';
+                successPage.style.display = 'none';
+                statusBar.innerText = '📌 已解绑，请重新登录';
+            }
+            return '✅ 解绑成功';
+        }
+
+        // ================================================================
+        // ★★★★★ 登录按钮 ★★★★★
+        // ================================================================
+        document.getElementById('clientLoginBtn').addEventListener('click', function() {
+            var key = keyInput.value.trim();
+            if (!key) {
+                msg.innerText = '⚠️ 请输入卡密';
+                return;
+            }
+
+            msg.innerHTML = '<span class="loading"></span> 正在验证卡密...';
+
+            setTimeout(function() {
+                if (handleLogin(key)) {
+                    loginPage.style.display = 'none';
+                    successPage.style.display = 'block';
+                    expireDisplay.innerText = clientExpire;
+                    statusBar.innerText = '✅ 已登录';
+                }
+            }, 300);
+        });
+
+        // ================================================================
+        // ★★★★★ 解绑按钮 ★★★★★
+        // ================================================================
+        document.getElementById('clientUnbindBtn').addEventListener('click', function() {
+            var key = keyInput.value.trim();
+            if (!key) {
+                msg.innerText = '⚠️ 请输入卡密';
+                return;
+            }
+            var result = handleUnbind(key);
+            msg.innerHTML = result;
+        });
+
+        // ================================================================
+        // ★★★★★ 退出登录 ★★★★★
+        // ================================================================
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            clientLogged = false;
+            clientExpire = '';
+            currentAccount = '';
+            localStorage.removeItem('client_logged_key');
+            localStorage.removeItem('client_logged_account');
+            loginPage.style.display = 'block';
+            successPage.style.display = 'none';
+            statusBar.innerText = '📌 已退出，请重新登录';
+            msg.innerText = '已退出登录';
+            keyInput.value = '';
+        });
+
+        // ================================================================
+        // ★★★★★ 进入应用 ★★★★★
+        // ================================================================
+        document.getElementById('enterAppBtn').addEventListener('click', function() {
+            alert('🚀 进入应用 (后续自行扩展)');
+        });
+
+        // ================================================================
+        // ★★★★★ 初始化 ★★★★★
+        // ================================================================
+        function initClient() {
+            var savedKey = localStorage.getItem('client_logged_key');
+            var savedAccount = localStorage.getItem('client_logged_account');
+
+            if (savedKey && savedAccount) {
+                var allCards = getAllCardsFromAllAccounts();
+                var card = null;
+                for (var i = 0; i < allCards.length; i++) {
+                    if (allCards[i].key === savedKey && allCards[i]._account === savedAccount) {
+                        card = allCards[i];
+                        break;
+                    }
+                }
+
+                if (card && card.bound) {
+                    var isExpired = false;
+                    if (card.expire !== '永久') {
+                        var now = getBeijingTime();
+                        var expireDate = new Date(card.expire);
+                        if (expireDate < now) {
+                            isExpired = true;
+                        }
+                    }
+                    if (!isExpired) {
+                        clientLogged = true;
+                        clientExpire = card.expire;
+                        currentAccount = savedAccount;
+                        loginPage.style.display = 'none';
+                        successPage.style.display = 'block';
+                        expireDisplay.innerText = clientExpire;
+                        statusBar.innerText = '✅ 已恢复登录';
+                        keyInput.value = savedKey;
+                        msg.innerText = '✅ 已恢复登录状态';
+                        return;
+                    } else {
+                        localStorage.removeItem('client_logged_key');
+                        localStorage.removeItem('client_logged_account');
+                        msg.innerText = '⚠️ 卡密已过期，请重新登录';
+                    }
+                } else {
+                    localStorage.removeItem('client_logged_key');
+                    localStorage.removeItem('client_logged_account');
+                }
+            }
+
+            loginPage.style.display = 'block';
+            successPage.style.display = 'none';
+        }
+
+        window.__clientApi = {
+            MAIN_CODE: MAIN_CODE,
+            getAllCardsFromAllAccounts: getAllCardsFromAllAccounts,
+            handleLogin: handleLogin,
+            handleUnbind: handleUnbind,
+            getDeviceId: function() { return currentDeviceId; },
+            getBeijingTime: getBeijingTime,
+            refreshCards: getAllCardsFromAllAccounts
+        };
+
+        initClient();
+
+        console.log('✅ 客户端已启动');
+        console.log('📌 对接码:', MAIN_CODE);
+        console.log('📌 设备ID:', currentDeviceId);
+
+        var allCards = getAllCardsFromAllAccounts();
+        console.log('📌 所有卡密 (共 ' + allCards.length + ' 张)');
+    })();
+</script>
+</body>
+</html>
